@@ -110,6 +110,13 @@ FunctionExtractor::FindEnclosingClass(const std::string &ast, const FunctionName
         size_t coord_end = ast.find(']', coord_start);
         std::string coords = ast.substr(coord_start + 1, coord_end - coord_start - 1);
 
+        RemoveSpaces(coords);
+
+        // срабатывал exception на ToInt, так как
+        // coords.substr(comma + 1) возвращал не строку только с числом, а строку пробел число
+        // прим:" 12"
+        // поэтому добавил RemoveSpaces(coords);
+        // TODO: попросить проверить reviewer-а (воспроизвести проблему)
         size_t comma = coords.find(',');
         Position class_start{static_cast<size_t>(ToInt(coords.substr(0, comma))),
                              static_cast<size_t>(ToInt(coords.substr(comma + 1)))};
@@ -119,6 +126,8 @@ FunctionExtractor::FindEnclosingClass(const std::string &ast, const FunctionName
         size_t second_coord_end = ast.find(']', second_coord_start);
         std::string end_coords = ast.substr(second_coord_start + 1, second_coord_end - second_coord_start - 1);
 
+        // Аналогично проблеме выше
+        RemoveSpaces(end_coords);
         comma = end_coords.find(',');
         Position class_end{static_cast<size_t>(ToInt(end_coords.substr(0, comma))),
                            static_cast<size_t>(ToInt(end_coords.substr(comma + 1)))};

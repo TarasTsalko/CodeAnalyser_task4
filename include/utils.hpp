@@ -13,3 +13,8 @@ inline int ToInt(std::string_view value) {
     }
     return result;
 }
+
+inline void RemoveSpaces(std::string &str) {
+    const auto [first, last] = std::ranges::remove_if(str, [](unsigned char c) { return std::isspace(c); });
+    str.erase(first, last);
+}
