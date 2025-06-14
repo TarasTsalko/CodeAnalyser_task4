@@ -14,9 +14,11 @@ execute_process(
 
 find_package(GTest REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(range-v3 REQUIRED)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
+    ${range-v3_INCLUDE_DIRS}
 )
 
 set(target analyser)
