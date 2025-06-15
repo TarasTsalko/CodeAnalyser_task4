@@ -20,8 +20,12 @@
 
 namespace analyser::metric::metric_impl {
 
-struct CyclomaticComplexityMetric: IMetric {
-    // здесь ваш код
+struct CyclomaticComplexityMetric : IMetric {
+    virtual ~CyclomaticComplexityMetric() = default;
+
+protected:
+    virtual MetricResult::ValueType CalculateImpl(const function::Function &f) const;
+    virtual std::string Name() const;
 };
 
-} // namespace analyser::metric::metric_impl
+}  // namespace analyser::metric::metric_impl
