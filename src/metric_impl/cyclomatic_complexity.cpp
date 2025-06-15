@@ -29,9 +29,9 @@ MetricResult::ValueType CyclomaticComplexityMetric::CalculateImpl(const function
     // тогда зачем они упоминаются в пункте задания?
 
     // flat_set - не большой размер, частый поиск
-    const std::flat_set<std::string> significantLines = {"if_statement",     "for_statement",  "elif_clause",
-                                                         "except_clause",    "case_pattern",   "conditional_expression",
-                                                         "boolean_operator", "while_statement"};
+    const std::flat_set<std::string> significantLines = {
+        "if_statement",           "for_statement",    "elif_clause",     "except_clause",   "case_pattern",
+        "conditional_expression", "boolean_operator", "while_statement", "assert_statement"};
 
     bool caseBlockStarted = false;
     auto checker = [&significantLines, &caseBlockStarted](auto &&part) {
