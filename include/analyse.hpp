@@ -79,7 +79,17 @@ auto SplitByClasses(const MetricsToFuncs &analysis) {
 }
 
 auto SplitByFiles(const auto &analysis) {
-    // здесь ваш код
+
+    auto groups = analysis |
+                  vs::chunk_by([](const auto &a, const auto &b) { return a.first.filename == b.first.filename; }) |
+                  vs::transform([](auto &&subrange) {
+                      MetricsToFuncs group;
+                      std::ranges::move(subrange, std::back_inserter(group));
+                      return group;
+                  }) |
+                  std::ranges::to<std::vector>();
+
+    return groups;
 }
 
 void AccumulateFunctionAnalysis(const auto &analysis,
