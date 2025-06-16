@@ -55,8 +55,27 @@ auto AnalyseFunctions(const std::vector<std::string> &files,
     return results;
 }
 
-auto SplitByClasses(const auto &analysis) {
-    // здесь ваш код
+auto SplitByClasses(const MetricsToFuncs &analysis) {
+
+    auto grouped = analysis | std::views::filter([](const auto &item) { return item.first.class_name.has_value(); }) |
+                   std::views::transform([](auto &&item) { return std::move(item); }) |
+                   std::views::chunk_by([](const auto &a, const auto &b) {
+                       return a.first.class_name.value() == b.first.class_name.value();
+                   });
+
+    // Вопрос к reviewer-у
+    // возвращаемы тип данных это вектор MetricsToFuncs,
+    // в свою очередь MetricsToFuncs, который std::vector>;,
+    // MetricResults --> std::vector<...>, можно ли сделать более оптимально (так как
+    // из-за вложенных векторов будет просадка производительности) // или так  и задумано?
+    auto groups = grouped | std::views::transform([](auto &&subrange) {
+                      MetricsToFuncs group;
+                      std::ranges::move(subrange, std::back_inserter(group));
+                      return group;
+                  }) |
+                  std::ranges::to<std::vector>();
+
+    return groups;
 }
 
 auto SplitByFiles(const auto &analysis) {
