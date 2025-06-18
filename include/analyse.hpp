@@ -17,6 +17,8 @@
 #include <variant>
 #include <vector>
 
+#include "./metric_accumulator_impl/accumulators.hpp"
+#include "./metric_impl/metrics.hpp"
 #include "file.hpp"
 #include "function.hpp"
 #include "metric.hpp"
@@ -94,7 +96,8 @@ auto SplitByFiles(const auto &analysis) {
 
 void AccumulateFunctionAnalysis(const auto &analysis,
                                 const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
-    // здесь ваш код
+    std::ranges::for_each(
+        analysis, [&accumulator](const auto &group) { accumulator.AccumulateNextFunctionResults(group.second); });
 }
 
 void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
@@ -110,6 +113,40 @@ void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
                               [](const auto &metric) { std::print("\t{}: {}\n", metric.metric_name, metric.value); });
     };
     std::ranges::for_each(metricsToFuncs, print_info);
+}
+
+void PrintResultAnalyseSplittedByGroup(const auto &analysis,
+                                       analyser::metric_accumulator::MetricsAccumulator &accumulator,
+                                       std::string_view mode) {
+    namespace metric_impl = metric::metric_impl;
+    namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
+    namespace accumulator_interface = analyser::metric_accumulator;
+
+    std::ranges::for_each(analysis, [&accumulator, mode](const auto &group) {
+        analyser::AccumulateFunctionAnalysis(group, accumulator);
+
+        std::string field;
+        if (mode == "file")
+            std::print("Accumulated Analysis for file: {}\n", group.begin()->first.filename);
+        else if (mode == "class")
+            std::print("Accumulated Analysis for class: {}\n", *group.begin()->first.class_name);
+
+        const auto &data = group.begin()->second;
+        std::ranges::for_each(data, [&accumulator](const auto &metric) {
+            const auto &metricAcc =
+                accumulator.GetFinalizedAccumulator<accumulator_interface::IAccumulator>(metric.metric_name);
+
+            if (const auto *acc = dynamic_cast<const accamulator_impl::SumAverageAccumulator *>(&metricAcc)) {
+                const auto sumAndAverageRes = acc->Get();
+                std::print("\t {} Sum: {}\n", metric.metric_name, sumAndAverageRes.sum);
+                std::print("\t {} Average: {}\n", metric.metric_name, sumAndAverageRes.average);
+            } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
+                std::print("\t {} Average: {}\n", metric.metric_name, acc->Get());
+            }
+        });
+
+        accumulator.ResetAccumulators();
+    });
 }
 
 }  // namespace analyser
