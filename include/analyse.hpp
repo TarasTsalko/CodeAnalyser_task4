@@ -12,6 +12,7 @@
 #include <iostream>
 #include <print>
 #include <ranges>
+#include <set>
 #include <sstream>
 #include <string>
 #include <variant>
@@ -113,6 +114,31 @@ void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
                               [](const auto &metric) { std::print("\t{}: {}\n", metric.metric_name, metric.value); });
     };
     std::ranges::for_each(metricsToFuncs, print_info);
+}
+
+void PrintSummaryResults(const auto &analysis, const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
+    namespace metric_impl = metric::metric_impl;
+    namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
+    namespace accumulator_interface = analyser::metric_accumulator;
+
+    auto uniqueMetrics =
+        analysis | std::views::transform([](const auto &info) {
+            return info.second | std::views::transform([](const auto &metric) { return metric.metric_name; });
+        }) |
+        std::views::join | std::ranges::to<std::set<std::string>>();
+
+    // Обрабатываем каждую уникальную метрику
+    std::ranges::for_each(uniqueMetrics, [&accumulator](const std::string &metricName) {
+        const auto &metricAcc = accumulator.GetFinalizedAccumulator<accumulator_interface::IAccumulator>(metricName);
+
+        if (const auto *acc = dynamic_cast<const accamulator_impl::SumAverageAccumulator *>(&metricAcc)) {
+            const auto sumAndAverageRes = acc->Get();
+            std::cout << std::format("\t {} Sum: {}\n", metricName, sumAndAverageRes.sum);
+            std::cout << std::format("\t {} Average: {}\n", metricName, sumAndAverageRes.average);
+        } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
+            std::cout << std::format("\t {} Average: {}\n", metricName, acc->Get());
+        }
+    });
 }
 
 void PrintResultAnalyseSplittedByGroup(const auto &analysis,

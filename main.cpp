@@ -66,8 +66,11 @@ int main(int argc, char *argv[]) {
     auto splittedByClasses = analyser::SplitByClasses( metricsToFuncs );
     analyser::PrintResultAnalyseSplittedByGroup( splittedByClasses, accumulator, "class" );
    
-    // запустите analyser::AccumulateFunctionAnalysis для всех результатов метрик
-    // выведете результаты на консоль
+    analyser::AccumulateFunctionAnalysis(metricsToFuncs, accumulator);
+    
+    std::println();
+    std::println( "========Общий результат по всем функциям===========" );
+    analyser::PrintSummaryResults( metricsToFuncs, accumulator );
 
     return 0;
 }
