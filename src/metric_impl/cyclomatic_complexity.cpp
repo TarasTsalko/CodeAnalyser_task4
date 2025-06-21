@@ -24,14 +24,17 @@ MetricResult::ValueType CyclomaticComplexityMetric::CalculateImpl(const function
     // Вопросы к ревьюверу:
     // 1. Как я понимаю цикломатическая сложность отдельно взятой функции ( количеств принятия решений + 1 )?
     // 2. Составной if повышает цикломатическую сложность на количество составных частей прим: if a > 0.0 or a < -2.0
-    // такой if повысит её не на 1, а на 2
+    // такой if повысит её не на 1, а на 2?
     // 3. else не увеличивает цикломатическую сложность, только if, else_if, как и finaly(не увеличивает сложность),
     // тогда зачем они упоминаются в пункте задания?
+    // 4. нужно ли учитывть конструкции вида  self.data = [item for item in self.data if item is not None]?
+    // сейчас учитывается if в таких конструкциях, но не for
 
     // flat_set - не большой размер, частый поиск
     const std::flat_set<std::string> significantLines = {
-        "if_statement",           "for_statement",    "elif_clause",     "except_clause",   "case_pattern",
-        "conditional_expression", "boolean_operator", "while_statement", "assert_statement"};
+        "if_statement",    "if_clause",       "for_statement",          "elif_clause",
+        "except_clause",   "case_pattern",    "conditional_expression", "boolean_operator",
+        "while_statement", "assert_statement"};
 
     bool caseBlockStarted = false;
     auto checker = [&significantLines, &caseBlockStarted](auto &&part) {

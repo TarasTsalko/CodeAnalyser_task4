@@ -37,8 +37,8 @@ namespace rs = std::ranges;
 
 using MetricsToFuncs = std::vector<std::pair<Function, MetricResults>>;
 
-auto AnalyseFunctions(const std::vector<std::string> &files,
-                      const analyser::metric::MetricExtractor &metric_extractor) {
+inline auto AnalyseFunctions(const std::vector<std::string> &files,
+                             const analyser::metric::MetricExtractor &metric_extractor) {
 
     using Functions = std::vector<Function>;
     MetricsToFuncs results;
@@ -48,7 +48,7 @@ auto AnalyseFunctions(const std::vector<std::string> &files,
 
     auto all_functions = files | vs::transform([&functionExtractor](const auto &fullfileName) {
                              const File file(fullfileName);
-                             return functionExtractor.Get(file);  // returns std::vector<FunctionType>
+                             return functionExtractor.Get(file);  // return std::vector<FunctionType>
                          }) |
                          vs::join;
 
@@ -58,7 +58,7 @@ auto AnalyseFunctions(const std::vector<std::string> &files,
     return results;
 }
 
-auto SplitByClasses(const MetricsToFuncs &analysis) {
+inline auto SplitByClasses(const MetricsToFuncs &analysis) {
 
     auto grouped = analysis | std::views::filter([](const auto &item) { return item.first.class_name.has_value(); }) |
                    std::views::transform([](auto &&item) { return std::move(item); }) |
@@ -81,7 +81,7 @@ auto SplitByClasses(const MetricsToFuncs &analysis) {
     return groups;
 }
 
-auto SplitByFiles(const auto &analysis) {
+inline auto SplitByFiles(const auto &analysis) {
 
     auto groups = analysis |
                   vs::chunk_by([](const auto &a, const auto &b) { return a.first.filename == b.first.filename; }) |
@@ -95,13 +95,13 @@ auto SplitByFiles(const auto &analysis) {
     return groups;
 }
 
-void AccumulateFunctionAnalysis(const auto &analysis,
-                                const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
+inline void AccumulateFunctionAnalysis(const auto &analysis,
+                                       const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
     std::ranges::for_each(
         analysis, [&accumulator](const auto &group) { accumulator.AccumulateNextFunctionResults(group.second); });
 }
 
-void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
+inline void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
     auto print_info = [](const auto &info) {
         const auto &func = info.first;
         if (func.class_name)
@@ -116,7 +116,8 @@ void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
     std::ranges::for_each(metricsToFuncs, print_info);
 }
 
-void PrintSummaryResults(const auto &analysis, const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
+inline void PrintSummaryResults(const auto &analysis,
+                                const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
     namespace metric_impl = metric::metric_impl;
     namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
     namespace accumulator_interface = analyser::metric_accumulator;
@@ -141,9 +142,9 @@ void PrintSummaryResults(const auto &analysis, const analyser::metric_accumulato
     });
 }
 
-void PrintResultAnalyseSplittedByGroup(const auto &analysis,
-                                       analyser::metric_accumulator::MetricsAccumulator &accumulator,
-                                       std::string_view mode) {
+inline void PrintResultAnalyseSplittedByGroup(const auto &analysis,
+                                              analyser::metric_accumulator::MetricsAccumulator &accumulator,
+                                              std::string_view mode) {
     namespace metric_impl = metric::metric_impl;
     namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
     namespace accumulator_interface = analyser::metric_accumulator;

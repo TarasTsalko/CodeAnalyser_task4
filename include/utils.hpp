@@ -42,3 +42,15 @@ bool CheckMetric(const std::string &fileName, std::string_view metric_name, int 
         return metric_name == metricRes.metric_name && metricRes.value == val;
     });
 }
+
+inline auto CalculateAccamullatedValue(const auto &analyse, auto &acc, std::string_view metric_name,
+                                       bool make_finilize = true) {
+    auto metrics_view = analyse | std::views::values | std::views::join;
+    std::ranges::for_each(metrics_view, [&acc, metric_name](const auto &metric) {
+        if (metric.metric_name == metric_name) {
+            acc.Accumulate(metric);
+        }
+    });
+    if (make_finilize)
+        acc.Finalize();
+}

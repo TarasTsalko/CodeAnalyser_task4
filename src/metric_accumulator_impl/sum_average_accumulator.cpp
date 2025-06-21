@@ -17,6 +17,8 @@
 #include <variant>
 #include <vector>
 
+#include <stdexcept>
+
 namespace analyser::metric_accumulator::metric_accumulator_impl {
 
 void SumAverageAccumulator::Accumulate(const metric::MetricResult &metric_result) {
@@ -25,6 +27,9 @@ void SumAverageAccumulator::Accumulate(const metric::MetricResult &metric_result
 }
 
 void SumAverageAccumulator::Finalize() {
+    if (count == 0)
+        throw std::runtime_error("SumAverageAccumulator::Finalize: деление"
+                                 " на ноль при подсчете усредненного значения метрики");
     average = sum / count;
     is_finalized = true;
 }
@@ -37,7 +42,8 @@ void SumAverageAccumulator::Reset() {
 }
 
 SumAverageAccumulator::SumAverage SumAverageAccumulator::Get() const {
-    assert(is_finalized);  // возможно потом стоит бросить исключение
+    if (!is_finalized)
+        throw std::runtime_error("SumAverageAccumulator::Get: процесс аккомуляции метрик не был финализирован");
     return SumAverageAccumulator::SumAverage{sum, average};
 }
 

@@ -25,7 +25,9 @@ void AverageAccumulator::Accumulate(const metric::MetricResult &metric_result) {
 }
 
 void AverageAccumulator::Finalize() {
-    // добавить exception при делении на 0.0
+    if (count == 0)
+        throw std::runtime_error("AverageAccumulator::Finalize: деление"
+                                 " на ноль при подсчете усредненного значения метрики");
     average = sum / count;
     is_finalized = true;
 }
@@ -38,7 +40,8 @@ void AverageAccumulator::Reset() {
 }
 
 double AverageAccumulator::Get() const {
-    assert(is_finalized);  // возможно потом стоит бросить исключение
+    if (!is_finalized)
+        throw std::runtime_error("AverageAccumulator::Get: процесс аккомуляции метрик не был финализирован");
     return average;
 }
 

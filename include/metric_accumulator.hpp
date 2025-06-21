@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -43,7 +44,8 @@ struct MetricsAccumulator {
     template <typename Accumulator>
     const Accumulator &GetFinalizedAccumulator(const std::string &metric_name) const {
         auto it = accumulators.find(metric_name);
-        assert(it != accumulators.end());  // потом бросить исключение
+        if (it == accumulators.end())
+            std::runtime_error(std::format("В MetricAccumulator не найдена метрика: {}", metric_name));
         it->second->Finalize();
         return *it->second.get();
     }
