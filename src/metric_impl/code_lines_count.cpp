@@ -22,49 +22,66 @@
 
 namespace analyser::metric::metric_impl {
 
-MetricResult::ValueType CodeLinesCountMetric::CalculateImpl(const function::Function &f) const {
-    const size_t MAX_VALUE = std::numeric_limits<size_t>::max();
-    size_t prevPos = MAX_VALUE;
+std::pair<int, int> GetRange(std::string_view sv) {
+    auto first = sv |
+                 std::views::drop_while([](char c) { return c != '['; })     // Отбрасываем первую часть (до первой '[')
+                 | std::views::drop(1)                                       // отбросили [
+                 | std::views::take_while([](char c) { return c != ','; });  // берем часть до первой ','
 
-    auto checker = [&prevPos](auto &&part) {
+    auto second = sv |
+                  std::views::drop_while([](char c) { return c != '['; })  // Отбрасываем первую часть (до первой '[')
+                  | std::views::drop(1)                                    // отбросили [
+                  | std::views::drop_while([](char c) {
+                        return c != '[';
+                    })                   // (у второй группы чисел) Отбрасываем первую часть (до первой '[')
+                  | std::views::drop(1)  // отбросили [
+                  | std::views::take_while([](char c) { return c != ']'; })   // взяли все до ']' у второй группы чисел
+                  | std::views::take_while([](char c) { return c != ','; });  // взяли все до запятой
+
+    std::string_view start_pos_sv(&*first.begin(), std::ranges::distance(first));
+    std::string_view end_pos_sv(&*second.begin(), std::ranges::distance(second));
+    return std::make_pair(ToInt(start_pos_sv), ToInt(end_pos_sv));
+}
+
+MetricResult::ValueType CodeLinesCountMetric::CalculateImpl(const function::Function &f) const {
+
+    int prevStartPos = -1, prevEndPos = -1;
+    int operationCount = 0;
+    bool bodyOfFunctionStarted = false;
+    auto checker = [&](auto &&part) {
         std::string_view sv(&*part.begin(), std::ranges::distance(part));
 
-        // считаем количество линий в коде функции вместе с заголовкрм функции
-        // пропускаем:
-        // "comment" - однострочные коментарии
-        //  "expression_statement" - за "expression_statement" может идти не только действие, но и "string",
-        //  то есть многострочный комментарий
-        //  body - служебный тэг, его тоже пропускаем
-        if (sv.contains("comment") || sv.contains("expression_statement") || sv.contains("string") ||
-            sv.contains("body"))
-            return false;
-
-        // получаем индек начала строки без использования циклов
-        auto first_number = sv | std::views::split('[')  // разделяем по '['
-                            | std::views::drop(1)        // Отбрасываем первую часть (до первой '[')
-                            | std::views::take(1)        // Берем фрагмент после '['
-                            | std::views::join  // Получившиеся чфрагменты (после '[' объединяем строку для take_while )
-                            | std::views::take_while([](char c) { return c != ','; });  // берем часть до первой ','
-
-        // преобразовывем строку в числоW
-        std::string_view start_pos_sv(&*first_number.begin(), std::ranges::distance(first_number));
-        const int currentPos = ToInt(start_pos_sv);
-        // запоминаем текущую позицию
-        if (prevPos == MAX_VALUE) {
-            prevPos = currentPos;
-            return true;
+        // Строку с прототипом функции не учитываем (уточнил у куратора)
+        if (!bodyOfFunctionStarted) {
+            bodyOfFunctionStarted = sv.contains("body");
+            return;
         }
 
-        // если номер строки в скобках не изменился, то не считаем её повторно (блок дерева продалжается)
-        // строки виде a = 5; b = 7; (в AST-дереве отображаются несколькими строками)
-        if (prevPos == currentPos)
-            return false;
-        prevPos = currentPos;
-        return true;
+        // подсчитывам строки кода только самого тела функции,
+        // без строки объявления функции (реализовыва оба варианта, этот правельный, уточнял у куратора)
+        if (!bodyOfFunctionStarted)
+            return;
+
+        // "служебный" тэг, его тоже пропускаем, так как за ним стоит определенный тэг
+        // string на пример, если это многострочный комментарий
+        if (sv.contains("expression_statement"))
+            return;
+        // отбрасываем комментарии
+        if (sv.contains("comment") || sv.contains("string"))
+            return;
+
+        // берем диапозон чисел отвечающих за строку и высчитывам сколько строк занимает действие
+        auto [first, second] = GetRange(sv);
+        if (prevEndPos < second) {
+            prevStartPos = first;
+            prevEndPos = second;
+            operationCount += second - first + 1;
+        }
     };
 
     auto parts = f.ast | std::views::split('\n');
-    return std::ranges::count_if(parts, checker);
+    std::ranges::for_each(parts, checker);
+    return operationCount;
 }
 
 std::string CodeLinesCountMetric::Name() const { return std::string("CodeLinesCountMetric"); }
