@@ -88,21 +88,6 @@ inline void AccumulateFunctionAnalysis(const auto &analysis,
         analysis, [&accumulator](const auto &group) { accumulator.AccumulateNextFunctionResults(group.second); });
 }
 
-inline void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
-    auto print_info = [](const auto &info) {
-        const auto &func = info.first;
-        if (func.class_name)
-            std::print("{}[::{}]::{}\n", func.filename, *func.class_name, func.name);
-        else
-            std::print("{}[::None]::{}\n", func.filename, func.name);
-
-        // Inner iteration over metrics using ranges
-        std::ranges::for_each(info.second,
-                              [](const auto &metric) { std::print("\t{}: {}\n", metric.metric_name, metric.value); });
-    };
-    std::ranges::for_each(metricsToFuncs, print_info);
-}
-
 inline void PrintSummaryResults(const auto &analysis,
                                 const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
     namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
@@ -124,6 +109,10 @@ inline void PrintSummaryResults(const auto &analysis,
             std::print("\t {} Average: {}\n", metricName, sumAndAverageRes.average);
         } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
             std::print("\t {} Average: {}\n", metricName, acc->Get());
+        } else if (const auto *acc = dynamic_cast<const accamulator_impl::CategoricalAccumulator *>(&metricAcc)) {
+            rs::for_each(acc->Get(), [&metricName](const auto &pair) {
+                std::print("\t {} {} Count: {}\n", metricName, pair.first, pair.second);
+            });
         }
     });
 }
@@ -154,6 +143,10 @@ inline void PrintResultAnalyseSplittedByGroup(const auto &analysis,
                 std::print("\t {} Average: {}\n", metric.metric_name, sumAndAverageRes.average);
             } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
                 std::print("\t {} Average: {}\n", metric.metric_name, acc->Get());
+            } else if (const auto *acc = dynamic_cast<const accamulator_impl::CategoricalAccumulator *>(&metricAcc)) {
+                rs::for_each(acc->Get(), [&metric](const auto &pair) {
+                    std::print("\t {} {} Count: {}\n", metric.metric_name, pair.first, pair.second);
+                });
             }
         });
 

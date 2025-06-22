@@ -81,7 +81,8 @@ MetricResult::ValueType CountParametersMetric::CalculateImpl(const function::Fun
         return true;
     };
     auto parts = f.ast | std::views::split('\n');
-    return std::ranges::count_if(parts, checker);
+    int res = std::ranges::count_if(parts, checker);
+    return res;
 }
 
 std::string CountParametersMetric::Name() const { return std::string("CountParametersMetric"); }

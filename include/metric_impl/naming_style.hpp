@@ -5,8 +5,12 @@
 
 namespace analyser::metric::metric_impl {
 
-struct NamingStyleMetric : IMetric {
-    // здесь ваш код
+struct NamingStyleMetric final : public IMetric {
+    virtual ~NamingStyleMetric() = default;
+
+protected:
+    virtual MetricResult::ValueType CalculateImpl(const function::Function &f) const;
+    virtual std::string Name() const;
 };
 
 }  // namespace analyser::metric::metric_impl

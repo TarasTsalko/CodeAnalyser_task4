@@ -62,7 +62,8 @@ MetricResult::ValueType CyclomaticComplexityMetric::CalculateImpl(const function
         return res;
     };
     auto parts = f.ast | std::views::split('\n');
-    return std::ranges::count_if(parts, checker) + 1;
+    int res = std::ranges::count_if(parts, checker) + 1;
+    return res;
 }
 
 std::string CyclomaticComplexityMetric::Name() const { return std::string("CyclomaticComplexityMetric"); }

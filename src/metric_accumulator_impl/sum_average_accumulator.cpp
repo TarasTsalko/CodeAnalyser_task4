@@ -1,11 +1,12 @@
 #include "metric_accumulator_impl/sum_average_accumulator.hpp"
 
 #include <unistd.h>
+#include <variant>
 
 namespace analyser::metric_accumulator::metric_accumulator_impl {
 
 void SumAverageAccumulator::Accumulate(const metric::MetricResult &metric_result) {
-    sum += metric_result.value;
+    sum += std::get<int>(metric_result.value);
     count++;
 }
 

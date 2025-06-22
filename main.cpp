@@ -47,7 +47,9 @@ int main(int argc, char *argv[]) {
     metric_extractor.RegisterMetric( std::make_unique<metric_impl::CodeLinesCountMetric>() );
     metric_extractor.RegisterMetric( std::make_unique<metric_impl::CountParametersMetric>() );
     metric_extractor.RegisterMetric( std::make_unique<metric_impl::CyclomaticComplexityMetric>() );
+    metric_extractor.RegisterMetric( std::make_unique<metric_impl::NamingStyleMetric>() );
     
+
     // запустите analyser::AnalyseFunctions
     auto metricsToFuncs = analyser::AnalyseFunctions( inFiles, metric_extractor );
     
@@ -56,6 +58,7 @@ int main(int argc, char *argv[]) {
     accumulator.RegisterAccumulator( "CodeLinesCountMetric", std::make_unique<accamulator_impl::SumAverageAccumulator>() );
     accumulator.RegisterAccumulator( "CyclomaticComplexityMetric", std::make_unique<accamulator_impl::SumAverageAccumulator>() );
     accumulator.RegisterAccumulator( "CountParametersMetric", std::make_unique<accamulator_impl::AverageAccumulator>() );
+    accumulator.RegisterAccumulator( "NamingStyleMetric", std::make_unique<accamulator_impl::CategoricalAccumulator>() );
     
     std::println( "========Разбиение по файлам===========" );
     auto splittedByFiles = analyser::SplitByFiles( metricsToFuncs );

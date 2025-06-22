@@ -41,7 +41,7 @@ bool CheckMetric(const std::string &fileName, std::string_view metric_name, int 
     std::unique_ptr<metric::IMetric> metric = std::make_unique<MetricType>();
     return std::ranges::all_of(functions, [&metric, metric_name, val](const auto &f) {
         const auto metricRes = metric->Calculate(f);
-        return metric_name == metricRes.metric_name && metricRes.value == val;
+        return metric_name == metricRes.metric_name && std::get<int>(metricRes.value) == val;
     });
 }
 
