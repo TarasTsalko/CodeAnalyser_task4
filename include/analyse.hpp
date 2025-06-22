@@ -1,21 +1,8 @@
 #include <unistd.h>
 
-#include <algorithm>
-#include <array>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <filesystem>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <iostream>
 #include <print>
 #include <ranges>
-#include <set>
-#include <sstream>
 #include <string>
-#include <variant>
 #include <vector>
 
 #include "./metric_accumulator_impl/accumulators.hpp"
@@ -32,7 +19,6 @@ using namespace analyser::file;
 using namespace analyser::function;
 
 namespace vs = std::views;
-namespace rv = std::ranges::views;
 namespace rs = std::ranges;
 
 using MetricsToFuncs = std::vector<std::pair<Function, MetricResults>>;
@@ -118,7 +104,6 @@ inline void PrintResultAnalyseFunction(const MetricsToFuncs &metricsToFuncs) {
 
 inline void PrintSummaryResults(const auto &analysis,
                                 const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
-    namespace metric_impl = metric::metric_impl;
     namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
     namespace accumulator_interface = analyser::metric_accumulator;
 
@@ -134,10 +119,10 @@ inline void PrintSummaryResults(const auto &analysis,
 
         if (const auto *acc = dynamic_cast<const accamulator_impl::SumAverageAccumulator *>(&metricAcc)) {
             const auto sumAndAverageRes = acc->Get();
-            std::cout << std::format("\t {} Sum: {}\n", metricName, sumAndAverageRes.sum);
-            std::cout << std::format("\t {} Average: {}\n", metricName, sumAndAverageRes.average);
+            std::print("\t {} Sum: {}\n", metricName, sumAndAverageRes.sum);
+            std::print("\t {} Average: {}\n", metricName, sumAndAverageRes.average);
         } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
-            std::cout << std::format("\t {} Average: {}\n", metricName, acc->Get());
+            std::print("\t {} Average: {}\n", metricName, acc->Get());
         }
     });
 }
@@ -145,7 +130,6 @@ inline void PrintSummaryResults(const auto &analysis,
 inline void PrintResultAnalyseSplittedByGroup(const auto &analysis,
                                               analyser::metric_accumulator::MetricsAccumulator &accumulator,
                                               std::string_view mode) {
-    namespace metric_impl = metric::metric_impl;
     namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
     namespace accumulator_interface = analyser::metric_accumulator;
 

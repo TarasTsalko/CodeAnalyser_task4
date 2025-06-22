@@ -4,7 +4,9 @@
 #include "function.hpp"
 #include "metric.hpp"
 
+#include <algorithm>
 #include <charconv>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>

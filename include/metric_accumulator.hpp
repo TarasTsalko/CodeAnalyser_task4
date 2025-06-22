@@ -2,27 +2,12 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <any>
-#include <array>
 #include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <filesystem>
-#include <format>
-#include <fstream>
-#include <functional>
-#include <iostream>
-#include <ranges>
-#include <sstream>
 #include <string>
-#include <variant>
+#include <unordered_map>
 #include <vector>
 
 #include "metric.hpp"
-
-namespace rv = std::ranges::views;
-namespace rs = std::ranges;
 
 namespace analyser::metric_accumulator {
 
