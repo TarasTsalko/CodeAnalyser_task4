@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     
 
     // запустите analyser::AnalyseFunctions
-    auto metricsToFuncs = analyser::AnalyseFunctions( inFiles, metric_extractor );
+    auto analyse = analyser::AnalyseFunctions( inFiles, metric_extractor );
     
     // зарегистрируйте аккумуляторы метрик в accumulator
     analyser::metric_accumulator::MetricsAccumulator accumulator;
@@ -61,19 +61,19 @@ int main(int argc, char *argv[]) {
     accumulator.RegisterAccumulator( "NamingStyleMetric", std::make_unique<accamulator_impl::CategoricalAccumulator>() );
     
     std::println( "========Разбиение по файлам===========" );
-    auto splittedByFiles = analyser::SplitByFiles( metricsToFuncs );
+    auto splittedByFiles = analyser::SplitByFiles( analyse );
     analyser::PrintResultAnalyseSplittedByGroup( splittedByFiles, accumulator, "file" );
    
     std::println();
     std::println( "========Разбиение по классам===========" );
-    auto splittedByClasses = analyser::SplitByClasses( metricsToFuncs );
+    auto splittedByClasses = analyser::SplitByClasses( analyse );
     analyser::PrintResultAnalyseSplittedByGroup( splittedByClasses, accumulator, "class" );
    
-    analyser::AccumulateFunctionAnalysis(metricsToFuncs, accumulator);
+    analyser::AccumulateFunctionAnalysis(analyse, accumulator);
     
     std::println();
     std::println( "========Общий результат по всем функциям===========" );
-    analyser::PrintSummaryResults( metricsToFuncs, accumulator );
+    analyser::PrintSummaryResults( analyse, accumulator );
 
     return 0;
 }

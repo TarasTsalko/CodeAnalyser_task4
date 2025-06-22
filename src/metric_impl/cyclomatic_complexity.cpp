@@ -3,19 +3,8 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <array>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <flat_set>
-#include <fstream>
-#include <functional>
-#include <iostream>
 #include <ranges>
-#include <sstream>
-#include <string>
-#include <variant>
-#include <vector>
 
 namespace analyser::metric::metric_impl {
 

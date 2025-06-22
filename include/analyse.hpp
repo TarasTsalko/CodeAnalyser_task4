@@ -84,71 +84,55 @@ inline auto SplitByFiles(const auto &analysis) {
 
 inline void AccumulateFunctionAnalysis(const auto &analysis,
                                        const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
-    std::ranges::for_each(
-        analysis, [&accumulator](const auto &group) { accumulator.AccumulateNextFunctionResults(group.second); });
+    rs::for_each(analysis,
+                 [&accumulator](const auto &group) { accumulator.AccumulateNextFunctionResults(group.second); });
 }
 
-inline void PrintSummaryResults(const auto &analysis,
-                                const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
+inline void PrintImpl(const std::string &metric_name,
+                      const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
     namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
     namespace accumulator_interface = analyser::metric_accumulator;
+    const auto &metricAcc = accumulator.GetFinalizedAccumulator<accumulator_interface::IAccumulator>(metric_name);
 
-    auto uniqueMetrics =
-        analysis | std::views::transform([](const auto &info) {
-            return info.second | std::views::transform([](const auto &metric) { return metric.metric_name; });
-        }) |
-        std::views::join | std::ranges::to<std::set<std::string>>();
+    if (const auto *acc = dynamic_cast<const accamulator_impl::SumAverageAccumulator *>(&metricAcc)) {
+        const auto sumAndAverageRes = acc->Get();
+        std::print("\t {} Sum: {}\n", metric_name, sumAndAverageRes.sum);
+        std::print("\t {} Average: {}\n", metric_name, sumAndAverageRes.average);
+    } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
+        std::print("\t {} Average: {}\n", metric_name, acc->Get());
+    } else if (const auto *acc = dynamic_cast<const accamulator_impl::CategoricalAccumulator *>(&metricAcc)) {
+        rs::for_each(acc->Get(), [&metric_name](const auto &pair) {
+            std::print("\t {} {} Count: {}\n", metric_name, pair.first, pair.second);
+        });
+    }
+}
+
+// Функции вывода результата расположил рядом с функциями анализа, но может стоит перенести в другое место?
+// Спросить у ревьювера
+inline void PrintSummaryResults(const auto &analysis,
+                                const analyser::metric_accumulator::MetricsAccumulator &accumulator) {
+    auto uniqueMetrics = analysis | vs::transform([](const auto &info) {
+                             return info.second | vs::transform([](const auto &metric) { return metric.metric_name; });
+                         }) |
+                         vs::join | rs::to<std::set<std::string>>();
 
     // Обрабатываем каждую уникальную метрику
-    std::ranges::for_each(uniqueMetrics, [&accumulator](const std::string &metricName) {
-        const auto &metricAcc = accumulator.GetFinalizedAccumulator<accumulator_interface::IAccumulator>(metricName);
-
-        if (const auto *acc = dynamic_cast<const accamulator_impl::SumAverageAccumulator *>(&metricAcc)) {
-            const auto sumAndAverageRes = acc->Get();
-            std::print("\t {} Sum: {}\n", metricName, sumAndAverageRes.sum);
-            std::print("\t {} Average: {}\n", metricName, sumAndAverageRes.average);
-        } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
-            std::print("\t {} Average: {}\n", metricName, acc->Get());
-        } else if (const auto *acc = dynamic_cast<const accamulator_impl::CategoricalAccumulator *>(&metricAcc)) {
-            rs::for_each(acc->Get(), [&metricName](const auto &pair) {
-                std::print("\t {} {} Count: {}\n", metricName, pair.first, pair.second);
-            });
-        }
-    });
+    rs::for_each(uniqueMetrics, [&accumulator](const std::string &metricName) { PrintImpl(metricName, accumulator); });
 }
 
 inline void PrintResultAnalyseSplittedByGroup(const auto &analysis,
                                               analyser::metric_accumulator::MetricsAccumulator &accumulator,
                                               std::string_view mode) {
-    namespace accamulator_impl = metric_accumulator::metric_accumulator_impl;
-    namespace accumulator_interface = analyser::metric_accumulator;
 
-    std::ranges::for_each(analysis, [&accumulator, mode](const auto &group) {
+    rs::for_each(analysis, [&accumulator, mode](const auto &group) {
         analyser::AccumulateFunctionAnalysis(group, accumulator);
-
-        std::string field;
         if (mode == "file")
             std::print("Accumulated Analysis for file: {}\n", group.begin()->first.filename);
         else if (mode == "class")
             std::print("Accumulated Analysis for class: {}\n", *group.begin()->first.class_name);
 
         const auto &data = group.begin()->second;
-        std::ranges::for_each(data, [&accumulator](const auto &metric) {
-            const auto &metricAcc =
-                accumulator.GetFinalizedAccumulator<accumulator_interface::IAccumulator>(metric.metric_name);
-
-            if (const auto *acc = dynamic_cast<const accamulator_impl::SumAverageAccumulator *>(&metricAcc)) {
-                const auto sumAndAverageRes = acc->Get();
-                std::print("\t {} Sum: {}\n", metric.metric_name, sumAndAverageRes.sum);
-                std::print("\t {} Average: {}\n", metric.metric_name, sumAndAverageRes.average);
-            } else if (const auto *acc = dynamic_cast<const accamulator_impl::AverageAccumulator *>(&metricAcc)) {
-                std::print("\t {} Average: {}\n", metric.metric_name, acc->Get());
-            } else if (const auto *acc = dynamic_cast<const accamulator_impl::CategoricalAccumulator *>(&metricAcc)) {
-                rs::for_each(acc->Get(), [&metric](const auto &pair) {
-                    std::print("\t {} {} Count: {}\n", metric.metric_name, pair.first, pair.second);
-                });
-            }
-        });
+        rs::for_each(data, [&accumulator](const auto &metric) { PrintImpl(metric.metric_name, accumulator); });
 
         accumulator.ResetAccumulators();
     });
