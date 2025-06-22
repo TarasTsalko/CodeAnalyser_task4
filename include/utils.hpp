@@ -34,14 +34,14 @@ inline auto CreateFunctions(const std::string &fileName) {
     return functions;
 }
 
-template <typename MetricType>
-bool CheckMetric(const std::string &fileName, std::string_view metric_name, int val) {
+template <typename MetricType, typename ValueType>
+bool CheckMetric(const std::string &fileName, std::string_view metric_name, ValueType &&val) {
     using namespace analyser;
     auto functions = CreateFunctions(fileName);
     std::unique_ptr<metric::IMetric> metric = std::make_unique<MetricType>();
     return std::ranges::all_of(functions, [&metric, metric_name, val](const auto &f) {
         const auto metricRes = metric->Calculate(f);
-        return metric_name == metricRes.metric_name && std::get<int>(metricRes.value) == val;
+        return metric_name == metricRes.metric_name && std::get<ValueType>(metricRes.value) == val;
     });
 }
 
