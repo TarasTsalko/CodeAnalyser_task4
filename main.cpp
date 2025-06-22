@@ -26,29 +26,54 @@
 #include "metric_accumulator_impl/accumulators.hpp"
 #include "metric_impl/metrics.hpp"
 
+
 int main(int argc, char *argv[]) {
+
     analyser::cmd::ProgramOptions options;
+
     // распарсите входные параметры
+    if( !options.Parse( argc, argv ) )
+        return 0;
+
+    namespace metric_impl      = analyser::metric::metric_impl;
+    namespace accamulator_impl = analyser::metric_accumulator::metric_accumulator_impl;
+    namespace accumulator_interface = analyser::metric_accumulator;
+
+    const std::vector<std::string>& inFiles = options.GetFiles();
 
     // analyser::metric::MetricExtractor metric_extractor;
     // зарегистрируйте метрики в metric_extractor
+    analyser::metric::MetricExtractor metric_extractor;
+    metric_extractor.RegisterMetric( std::make_unique<metric_impl::CodeLinesCountMetric>() );
+    metric_extractor.RegisterMetric( std::make_unique<metric_impl::CountParametersMetric>() );
+    metric_extractor.RegisterMetric( std::make_unique<metric_impl::CyclomaticComplexityMetric>() );
+    metric_extractor.RegisterMetric( std::make_unique<metric_impl::NamingStyleMetric>() );
+    
 
     // запустите analyser::AnalyseFunctions
-    // выведете результаты анализа на консоль
-
-    // analyser::metric_accumulator::MetricsAccumulator accumulator;
+    auto analyse = analyser::AnalyseFunctions( inFiles, metric_extractor );
+    
     // зарегистрируйте аккумуляторы метрик в accumulator
-
-    // запустите analyser::SplitByFiles
-    // запустите analyser::AccumulateFunctionAnalysis для каждого подмножества результатов метрик
-    // выведете результаты на консоль
-
-    // запустите analyser::SplitByClasses
-    // запустите analyser::AccumulateFunctionAnalysis для каждого подмножества результатов метрик
-    // выведете результаты на консоль
-
-    // запустите analyser::AccumulateFunctionAnalysis для всех результатов метрик
-    // выведете результаты на консоль
+    analyser::metric_accumulator::MetricsAccumulator accumulator;
+    accumulator.RegisterAccumulator( "CodeLinesCountMetric", std::make_unique<accamulator_impl::SumAverageAccumulator>() );
+    accumulator.RegisterAccumulator( "CyclomaticComplexityMetric", std::make_unique<accamulator_impl::SumAverageAccumulator>() );
+    accumulator.RegisterAccumulator( "CountParametersMetric", std::make_unique<accamulator_impl::AverageAccumulator>() );
+    accumulator.RegisterAccumulator( "NamingStyleMetric", std::make_unique<accamulator_impl::CategoricalAccumulator>() );
+    
+    std::println( "========Разбиение по файлам===========" );
+    auto splittedByFiles = analyser::SplitByFiles( analyse );
+    analyser::PrintResultAnalyseSplittedByGroup( splittedByFiles, accumulator, "file" );
+   
+    std::println();
+    std::println( "========Разбиение по классам===========" );
+    auto splittedByClasses = analyser::SplitByClasses( analyse );
+    analyser::PrintResultAnalyseSplittedByGroup( splittedByClasses, accumulator, "class" );
+   
+    analyser::AccumulateFunctionAnalysis(analyse, accumulator);
+    
+    std::println();
+    std::println( "========Общий результат по всем функциям===========" );
+    analyser::PrintSummaryResults( analyse, accumulator );
 
     return 0;
 }
